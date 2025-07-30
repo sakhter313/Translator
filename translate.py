@@ -171,17 +171,92 @@ st.set_page_config(page_title="MaverickMind Chat", page_icon="✨", layout="cent
 # Custom CSS for UI
 st.markdown("""
 <style>
-.stApp { background: url('https://img.freepik.com/free-photo/3d-rendering-dark-earth-space_23-2151051365.jpg') no-repeat center/cover; }
-.chat-container { max-width: 600px; margin: 0 auto; padding: 10px; border-radius: 10px; }
-.chat-bubble { padding: 10px 20px; margin: 10px 0; max-width: 80%; word-wrap: break-word; position: relative; }
-.user-bubble { background: #D1D5DB; color: #333; border-radius: 20px 10px; margin-left: auto; }
-.assistant-bubble { background: #c5d0e3; color: #000; border-radius: 10px 20px; margin-right: auto; }
-.chat-bubble .avatar { font-size: 1.2em; margin-right: 10px; }
-.chat-bubble .timestamp { font-size: 0.8em; color: #333; margin-top: 5px; display: block; }
-.chat-input-container { max-width: 600px; margin: 20px auto; display: flex; gap: 10px; }
-.stTextInput > div > div > input { height: 30px; padding: 5px 10px; border: 2px solid #4CAF50; border-radius: 20px; }
-button { background: #140F0F; color: white; padding: 8px 16px; border: 2px solid #0A0707; border-radius: 15px; cursor: pointer; }
-button:hover { background: #0A0707; }
+.stApp {
+    background-image: url('https://img.freepik.com/free-photo/colorful-abstract-nebula-space-background_53876-111355.jpg');
+    background-size: cover !important;
+}
+.chat-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 10px;
+    border-radius: 10px;
+}
+.chat-bubble {
+    padding: 10px 20px;
+    margin: 30px 0;
+    max-width: 80%;
+    word-wrap: break-word;
+    position: relative;
+}
+.user-bubble {
+    background-color: #D1D5DB;
+    color: #333;
+    border-radius: 20px 10px;
+    align-self: center;
+    margin-left: auto;
+}
+.assistant-bubble {
+    background-color: #c5d0e3;
+    color: #000f0b;
+    border-radius: 10px 20px;
+    align-self: flex-start;
+    margin-right: auto;
+}
+.chat-bubble .avatar {
+    font-size: 1.2em;
+    margin-right: 10px;
+    display: inline-block;
+    vertical-align: middle;
+}
+.chat-bubble .timestamp {
+    font-size: 0.8em;
+    color: #333;
+    margin-top: 5px;
+    display: block;
+}
+.chat-input-container {
+    max-width: 600px;
+    margin: 20px auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.stTextInput > div > div > input {
+    height: 30px;
+    padding: 5px 10px;
+    font-size: 14px;
+    border: 2px solid #4CAF50;
+    border-radius: 20px;
+}
+button {
+    background-color: #140F0F;
+    color: #261712;
+    padding: 8px 16px;
+    border: 2px solid #0A0707;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+button:hover {
+    background-color: #0A0707;
+}
+.suggestions-container {
+    max-height: 150px;
+    color: #5e2606;
+    overflow-y: auto;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    margin-top: 10px;
+}
+.stExpander {
+    border: 2px solid #edf5f2;
+    border-radius: 5px;
+}
+.stExpander p {
+    color: #05fa11;
+}
 </style>
 """, unsafe_allow_html=True)
 
