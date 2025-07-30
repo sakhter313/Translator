@@ -98,10 +98,14 @@ def export_chat_data(export_data: dict, export_format: str) -> Tuple[Any, str, s
             st.error("Install python-docx (`pip install python-docx`) for Word export.")
             return None, None, None
         
-        doc = Document()
-        doc.add_heading("Chat Export", 0)
-        for msg in export_data["messages"]:
-            p = doc.add_paragraph(f"{msg['role'].upper()}: tokens=8192, developer='Meta', color='#1877F2'")
+        from docx import Document
+
+doc = Document()
+msg = {"role": "assistant", "tokens": 4096, "developer": "OpenAI", "color": "#00FF00"}
+
+# Corrected f-string
+p = doc.add_paragraph(f"{msg['role'].upper()}: tokens={msg.get('tokens', 8192)}, developer='{msg.get('developer', 'Meta')}', color='{msg.get('color', '#1877F2')}'")
+doc.save("output.docx")
 
 # Translation function updated to use deep-translator
 def translate(source_lang: str, target_lang: str, text: str) -> str:
