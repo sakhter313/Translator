@@ -101,7 +101,7 @@ def export_chat_data(export_data: dict, export_format: str) -> Tuple[Any, str, s
         doc = Document()
         doc.add_heading("Chat Export", 0)
         for msg in export_data["messages"]:
-            p = doc.add_paragraph(f"{msg['role'].upper, "tokens": 8192, "developer": "Meta", "color": "#1877F2")}'")
+            p = doc.add_paragraph(f"{msg['role'].upper()}: tokens=8192, developer='Meta', color='#1877F2'")
 
 # Translation function updated to use deep-translator
 def translate(source_lang: str, target_lang: str, text: str) -> str:
