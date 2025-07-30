@@ -13,4 +13,4 @@ matplotlib
 reportlab==4.0.5
 python-docx==0.8.11
 replicate==1.0.4
-googletrans==4.0.0-rc1
+deep-translator==1.11.4
