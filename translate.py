@@ -18,15 +18,16 @@ import html  # For HTML escaping
 import streamlit.version  # To check Streamlit version
 
 # Translation function with error handling
+
 def translate(source_lang: str, target_lang: str, text: str) -> str:
-    """Translate text to the specified language using googletrans."""
+    """Translate text to the specified language using deep-translator."""
     try:
-        from googletrans import Translator
-        translator = Translator()
-        translated = translator.translate(text, src=source_lang, dest=target_lang.lower()).text
+        from deep_translator import GoogleTranslator
+        translator = GoogleTranslator(source=source_lang, target=target_lang.lower())
+        translated = translator.translate(text)
         return translated
     except ImportError:
-        return "[Translation not available; ensure googletrans==3.1.0a0 is in requirements.txt]"
+        return "[Translation not available; ensure deep-translator is installed]"
     except Exception as e:
         return f"[Translation error: {str(e)}]"
 
