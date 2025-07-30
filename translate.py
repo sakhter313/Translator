@@ -17,16 +17,16 @@ from pytz import timezone  # For IST timezone
 import html  # For HTML escaping
 import streamlit.version  # To check Streamlit version
 
-# Mock translation function; replace with googletrans if needed
+# Translation function with error handling
 def translate(source_lang: str, target_lang: str, text: str) -> str:
-    """Mock translation function; replace with actual implementation if needed."""
+    """Translate text to the specified language using googletrans."""
     try:
         from googletrans import Translator
         translator = Translator()
-        result = translator.translate(text, src=source_lang, dest=target_lang.lower()).text
-        return result
+        translated = translator.translate(text, src=source_lang, dest=target_lang.lower()).text
+        return translated
     except ImportError:
-        return f"[Translation to {target_lang} not available; install googletrans: `pip install googletrans==3.1.0a0`]"
+        return "[Translation not available; ensure googletrans==3.1.0a0 is in requirements.txt]"
     except Exception as e:
         return f"[Translation error: {str(e)}]"
 
