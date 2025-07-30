@@ -22,20 +22,18 @@ if not hasattr(streamlit, '__version__') or streamlit.__version__ < '1.11.1':
     st.error("Streamlit version must be >= 1.11.1 to avoid security vulnerabilities. Please update Streamlit.")
     st.stop()
 
-# Define AI personalities with updated instructions
+# Define AI personalities with instructions
 PERSONALITIES = {
     "Friendly Helper": "You are a friendly helper. Provide answers that are easy to understand and engaging.",
     "Technical Expert": "You are a technical expert. Provide detailed and precise answers, using technical jargon when appropriate, but only to questions related to Science, Computer, Technology, and related fields. If the user asks about unrelated topics, politely ask them to inquire about Science, Computer, Technology, etc.",
-    "Creative Storyteller": "You are a creative storyteller. Regardless of the user's input, generate an imaginative and engaging story. You can use the user's input as inspiration for the story if relevant."
+    "Creative Storyteller": "You are a creative storyteller. Regardless of the user’s input, generate an imaginative and engaging story. You can use the user’s input as inspiration for the story if relevant."
 }
 
-# Maximum file size for uploads (5MB)
+# Constants
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB in bytes
+MAX_MESSAGES = 100  # Maximum number of messages to store
 
-# Maximum number of messages to store in session state
-MAX_MESSAGES = 100
-
-# Function to count words (approximating token count)
+# Utility Functions
 def count_words(text: str) -> int:
     """Count the number of words in a text string to approximate token count."""
     return len(text.split())
@@ -101,7 +99,7 @@ def export_chat_data(export_data: dict, export_format: str) -> Tuple[Any, str, s
         doc = Document()
         doc.add_heading("Chat Export", 0)
         for msg in export_data["messages"]:
-            p = doc.add_paragraph(f"{msg['role'].upper()}: {msg['content']}")
+            doc.add_paragraph(f"{msg['role'].upper()}: {msg['content']}")
         bio = BytesIO()
         doc.save(bio)
         bio.seek(0)
@@ -152,7 +150,7 @@ def generate_story(image: Image.Image) -> str:
     ]
     detail_lines = [
         f"Every element blends harmoniously, creating {scene_description}.",
-        f"The image's textures weave together {scene_description}, evoking deep emotions."
+        f"The image’s textures weave together {scene_description}, evoking deep emotions."
     ]
     conclusion_lines = [
         "It is a tale of fleeting moments, captured in the delicate balance of time.",
@@ -172,44 +170,40 @@ def get_sentiment(text: str) -> float:
 
 def stream_response(completion) -> Generator[str, None, None]:
     """Stream response from Groq API."""
-    full_response = []
     for chunk in completion:
         if chunk.choices[0].delta.content:
-            content = chunk.choices[0].delta.content
-            full_response.append(content)
-            yield content
+            yield chunk.choices[0].delta.content
 
 def load_config() -> str:
     """Load Groq API key securely from environment variables or Streamlit secrets."""
     return st.secrets.get("GROQ_API_KEY", os.environ.get("GROQ_API_KEY", ""))
 
-# Translation function updated to use deep-translator
 def translate(source_lang: str, target_lang: str, text: str) -> str:
     """Translate text to the specified language using deep-translator."""
     try:
         from deep_translator import GoogleTranslator
         translator = GoogleTranslator(source=source_lang, target=target_lang.lower())
-        translated = translator.translate(text)
-        return translated
+        return translator.translate(text)
     except ImportError:
         return "[Translation not available; ensure deep-translator is installed]"
     except Exception as e:
         return f"[Translation error: {str(e)}]"
 
+# Load API Key
 GROQ_API_KEY = load_config()
 if not GROQ_API_KEY:
     st.error("GROQ_API_KEY not found. Please set it in environment variables or Streamlit secrets.")
     st.stop()
 
-# Streamlit Configuration with Enhanced CSS
+# Streamlit Configuration
 st.set_page_config(page_title="MaverickMind Chat", page_icon="✨", layout="centered", initial_sidebar_state="collapsed")
 
-# Enhanced CSS for a polished chat UI
+# Custom CSS for UI
 st.markdown("""
 <style>
 .stApp {
     background-image: url('https://img.freepik.com/free-photo/colorful-abstract-nebula-space-background_53876-111355.jpg');
-    background-size: cover !important;
+    background-size: cover;
 }
 .chat-container {
     max-width: 600px;
@@ -228,21 +222,17 @@ st.markdown("""
     background-color: #D1D5DB;
     color: #333;
     border-radius: 20px 10px;
-    align-self: center;
     margin-left: auto;
 }
 .assistant-bubble {
     background-color: #c5d0e3;
     color: #000f0b;
     border-radius: 10px 20px;
-    align-self: flex-start;
     margin-right: auto;
 }
 .chat-bubble .avatar {
     font-size: 1.2em;
     margin-right: 10px;
-    display: inline-block;
-    vertical-align: middle;
 }
 .chat-bubble .timestamp {
     font-size: 0.8em;
@@ -266,12 +256,11 @@ st.markdown("""
 }
 button {
     background-color: #140F0F;
-    color: #261712;
+    color: white;
     padding: 8px 16px;
     border: 2px solid #0A0707;
     border-radius: 15px;
     cursor: pointer;
-    transition: background-color 0.3s;
 }
 button:hover {
     background-color: #0A0707;
@@ -309,7 +298,9 @@ def initialize_session_state() -> None:
         "max_tokens": 4096,
         "export_ready": False,
         "selected_personality": "Friendly Helper",
-        "processed_files": set()
+        "processed_files": set(),
+        "translation_language": "English",
+        "previous_translation_language": "English"
     }
     for key, value in defaults.items():
         st.session_state.setdefault(key, value)
@@ -369,8 +360,25 @@ with st.sidebar:
                 st.image(image, caption="Your Image", use_container_width=True)
                 story = generate_story(image)
                 token_count = count_words(story)
-                st.session_state.messages.append({"role": "assistant", "content": f"Story:\n{story}", "token_count": token_count})
+                translated_story = translate("English", st.session_state.translation_language, story) if st.session_state.translation_language != "English" else story
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": story,
+                    "translated_text": translated_story,
+                    "token_count": token_count
+                })
                 st.session_state.processed_files.add(uploaded_file.name)
+    st.divider()
+    st.subheader("🌐 Translation")
+    translation_languages = ["English", "French", "Spanish", "German", "Hindi"]
+    selected_translation_language = st.selectbox("Translate to:", translation_languages, key="translation_language")
+    if selected_translation_language != st.session_state.previous_translation_language:
+        st.session_state.previous_translation_language = selected_translation_language
+        for msg in st.session_state.messages:
+            if msg["role"] == "assistant":
+                translated_text = translate("English", selected_translation_language, msg["content"]) if selected_translation_language != "English" else msg["content"]
+                msg["translated_text"] = translated_text
+        st.rerun()
     if st.button("🧹 Clear Chat"):
         st.session_state.messages = [{"role": "system", "content": st.session_state.system_message}]
         st.session_state.export_ready = False
@@ -394,21 +402,22 @@ st.markdown(
 
 # Chat Display
 ist = timezone('Asia/Kolkata')
-for message in st.session_state.messages:
-    if message["role"] in ["user", "assistant"]:
-        avatar = "👤" if message["role"] == "user" else "🤖"
-        bubble_class = "user-bubble" if message["role"] == "user" else "assistant-bubble"
+for i, msg in enumerate(st.session_state.messages):
+    if msg["role"] in ["user", "assistant"]:
+        avatar = "👤" if msg["role"] == "user" else "🤖"
+        bubble_class = "user-bubble" if msg["role"] == "user" else "assistant-bubble"
+        text_to_display = msg.get("translated_text", msg["content"]) if msg["role"] == "assistant" else msg["content"]
         timestamp = datetime.now(ist).strftime("%H:%M:%S IST")
-        sentiment = get_sentiment(message["content"])
+        sentiment = get_sentiment(msg["content"])
         emoji = '😊' if sentiment > 0 else '😔' if sentiment < 0 else '😐'
         timestamp_text = f"{timestamp} | {emoji} {sentiment:.2f}"
-        if message["role"] == "assistant" and "token_count" in message:
-            timestamp_text += f" | Tokens: {message['token_count']}"
+        if msg["role"] == "assistant" and "token_count" in msg:
+            timestamp_text += f" | Tokens: {msg['token_count']}"
         st.markdown(
             f"""
             <div class="chat-bubble {bubble_class}">
                 <span class="avatar">{avatar}</span>
-                {html.escape(message['content'])}
+                {html.escape(text_to_display)}
                 <span class="timestamp">{timestamp_text}</span>
             </div>
             """,
@@ -431,6 +440,7 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "assis
         )
         if st.button("Save Edit", key=f"save_edit_{last_idx}"):
             st.session_state.messages[-1]["content"] = edited_text
+            st.session_state.messages[-1]["translated_text"] = translate("English", st.session_state.translation_language, edited_text) if st.session_state.translation_language != "English" else edited_text
             st.session_state.messages[-1]["token_count"] = count_words(edited_text)
             st.rerun()
 
@@ -474,7 +484,6 @@ if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     try:
         client = Groq(api_key=GROQ_API_KEY)
-        # Filter messages to include only "role" and "content"
         api_messages = [{"role": msg["role"], "content": msg["content"]} for msg in st.session_state.messages]
         chat_completion = client.chat.completions.create(
             model=selected_model,
@@ -482,7 +491,6 @@ if prompt:
             max_tokens=st.session_state.max_tokens,
             stream=True
         )
-        # Display user message immediately
         user_timestamp = datetime.now(ist).strftime("%H:%M:%S IST")
         st.markdown(
             f"""
@@ -496,13 +504,11 @@ if prompt:
             """,
             unsafe_allow_html=True
         )
-        # Initialize assistant's bubble
         assistant_bubble = st.empty()
         assistant_bubble.markdown(
             '<div class="chat-bubble assistant-bubble"><span class="avatar">🤖</span>Generating response...</div>',
             unsafe_allow_html=True
         )
-        # Stream the response
         full_response = ""
         for chunk in stream_response(chat_completion):
             full_response += chunk
@@ -510,12 +516,14 @@ if prompt:
                 '<div class="chat-bubble assistant-bubble"><span class="avatar">🤖</span>' + html.escape(full_response) + '</div>',
                 unsafe_allow_html=True
             )
-            import time
-            time.sleep(0.1)  # Optional delay for smooth streaming
-        # Calculate token count and append message with token_count for UI
         token_count = count_words(full_response)
-        st.session_state.messages.append({"role": "assistant", "content": full_response, "token_count": token_count})
-        # Limit messages
+        translated_text = translate("English", st.session_state.translation_language, full_response) if st.session_state.translation_language != "English" else full_response
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": full_response,
+            "translated_text": translated_text,
+            "token_count": token_count
+        })
         if len(st.session_state.messages) > MAX_MESSAGES:
             st.session_state.messages = st.session_state.messages[-MAX_MESSAGES:]
         st.rerun()
@@ -523,7 +531,7 @@ if prompt:
         st.error(f"⚠️ Oops! Something went wrong: {str(e)}")
         st.session_state.messages.pop()
 
-# Additional Features: Word Cloud and Export
+# Additional Features
 st.divider()
 col1, col2 = st.columns(2)
 with col1:
